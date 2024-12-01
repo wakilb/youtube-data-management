@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Data Manager</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+        }
+        button, select, input {
+            margin: 5px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Data Manager</h1>
+
+        <!-- Fetch Data Section -->
+        <h2>Fetch Data</h2>
+        <label for="fetch-database">Choose Database:</label>
+        <select id="fetch-database">
+            <option value="postgres">PostgreSQL</option>
+            <option value="mongo">MongoDB</option>
+            <option value="both">Both Databases</option>
+        </select>
+        <label for="fetch-table">Choose Table/Collection:</label>
+        <select id="fetch-table">
+            <option value="Users">Users</option>
+            <option value="Videos">Videos</option>
+        </select>
+        <button onclick="fetchFlexibleData()">Fetch Data</button>
+        <pre id="fetch-output">Results will appear here...</pre>
+
+        <h2>Insert Data</h2>
+        <label for="insert-database">Choose Database:</label>
+        <select id="insert-database">
+            <option value="postgres">PostgreSQL</option>
+            <option value="mongo">MongoDB</option>
+            <option value="both">Both Databases</option>
+        </select>
+        <label for="insert-table">Choose Table/Collection:</label>
+        <select id="insert-table">
+            <option value="Users">Users</option>
+            <option value="Videos">Videos</option>
+        </select>
+        <div id="insert-fields">
+            <!-- Fields dynamically populated -->
+        </div>
+        <button onclick="insertFlexibleData()">Insert Data</button>
+        <pre id="insert-output"></pre>
+
+        <!-- Update Data Section -->
+        <h2>Update Data</h2>
+        <label for="update-database">Choose Database:</label>
+        <select id="update-database">
+            <option value="postgres">PostgreSQL</option>
+            <option value="mongo">MongoDB</option>
+            <option value="both">Both Databases</option>
+        </select>
+        <label for="update-table">Choose Table/Collection:</label>
+        <select id="update-table">
+            <option value="Users">Users</option>
+            <option value="Videos">Videos</option>
+        </select>
+        <div id="update-fields">
+            <!-- Fields dynamically populated -->
+        </div>
+        <button onclick="updateFlexibleData()">Update Data</button>
+        <pre id="update-output"></pre>
+
+        <!-- Delete Data Section -->
+        <h2>Delete Data</h2>
+        <label for="delete-database">Choose Database:</label>
+        <select id="delete-database">
+            <option value="postgres">PostgreSQL</option>
+            <option value="mongo">MongoDB</option>
+            <option value="both">Both Databases</option>
+        </select>
+        <label for="delete-table">Choose Table/Collection:</label>
+        <select id="delete-table">
+            <option value="Users">Users</option>
+            <option value="Videos">Videos</option>
+        </select>
+        <div id="delete-fields">
+            <!-- Fields dynamically populated -->
+        </div>
+        <button onclick="deleteFlexibleData()">Delete Data</button>
+        <pre id="delete-output"></pre>
+
+
+    </div>
+
+    <script>
+        document.getElementById("insert-table").addEventListener("change", () => {
+            const table = document.getElementById("insert-table").value;
+            const fieldsDiv = document.getElementById("insert-fields");
+            fieldsDiv.innerHTML = "";
+    
+            if (table === "Users") {
+                fieldsDiv.innerHTML = `
+                    <input type="text" id="user-name" placeholder="User Name" required />
+                    <input type="text" id="user-email" placeholder="User Email" required />
+                    <input type="text" id="user-region" placeholder="User Region" required />
+                `;
+            } else if (table === "Videos") {
+                fieldsDiv.innerHTML = `
+                    <input type="text" id="video-title" placeholder="Video Title" required />
+                    <input type="text" id="video-description" placeholder="Video Description" required />
+                    <input type="date" id="video-upload-date" required />
+                    <input type="text" id="video-category" placeholder="Video Category" required />
+                    <h3>Link to User:</h3>
+                    <input type="text" id="user-email" placeholder="User Email (Existing User)" />
+                    <h4>OR Create a New User</h4>
+                    <input type="text" id="user-name" placeholder="User Name" />
+                    <input type="text" id="user-region" placeholder="User Region" />
+                `;
+            }
+        });
+    
+        async function insertFlexibleData() {
+            const database = document.getElementById("insert-database").value;
+            const table = document.getElementById("insert-table").value;
+            const output = document.getElementById("insert-output");
+    
+            let payload = { table };
+    
+            if (table === "Users") {
+                payload.data = {
+                    name: document.getElementById("user-name").value,
+                    email: document.getElementById("user-email").value,
+                    region: document.getElementById("user-region").value
+                };
+            } else if (table === "Videos") {
+                payload.data = {
+                    title: document.getElementById("video-title").value,
+                    description: document.getElementById("video-description").value,
+                    upload_date: document.getElementById("video-upload-date").value,
+                    category: document.getElementById("video-category").value,
+                    email: document.getElementById("user-email").value || null,
+                    name: document.getElementById("user-name").value || null,
+                    region: document.getElementById("user-region").value || null
+                };
+            }
+    
+            output.textContent = "Inserting data...";
+            try {
+                const response = await fetch(`/insert_data?database=${database}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = "Error: " + error.message;
+            }
+        }
+    
+        async function fetchFlexibleData() {
+            const database = document.getElementById("fetch-database").value;
+            const table = document.getElementById("fetch-table").value;
+            const output = document.getElementById("fetch-output");
+    
+            output.textContent = "Fetching data...";
+            try {
+                const response = await fetch(`/fetch_data?database=${database}&table=${table}`);
+                const data = await response.json();
+                output.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                output.textContent = "Error: " + error.message;
+            }
+        }
+    </script>
+    <script>
+        document.getElementById("update-table").addEventListener("change", () => {
+            const table = document.getElementById("update-table").value;
+            const fieldsDiv = document.getElementById("update-fields");
+            fieldsDiv.innerHTML = "";
+    
+            if (table === "Users") {
+                fieldsDiv.innerHTML = `
+                    <input type="number" id="user-id" placeholder="User ID (Required)" required />
+                    <input type="text" id="user-name" placeholder="New User Name" />
+                    <input type="text" id="user-email" placeholder="New User Email" />
+                    <input type="text" id="user-region" placeholder="New User Region" />
+                `;
+            } else if (table === "Videos") {
+                fieldsDiv.innerHTML = `
+                    <input type="number" id="video-id" placeholder="Video ID (Required)" required />
+                    <input type="text" id="video-title" placeholder="New Video Title" />
+                    <input type="text" id="video-description" placeholder="New Video Description" />
+                    <input type="date" id="video-upload-date" placeholder="New Upload Date" />
+                    <input type="text" id="video-category" placeholder="New Video Category" />
+                `;
+            }
+        });
+    
+        async function updateFlexibleData() {
+            const database = document.getElementById("update-database").value;
+            const table = document.getElementById("update-table").value;
+            const output = document.getElementById("update-output");
+    
+            let payload = { table };
+    
+            if (table === "Users") {
+                payload.data = {
+                    user_id: parseInt(document.getElementById("user-id").value),
+                    name: document.getElementById("user-name").value || null,
+                    email: document.getElementById("user-email").value || null,
+                    region: document.getElementById("user-region").value || null
+                };
+            } else if (table === "Videos") {
+                payload.data = {
+                    video_id: parseInt(document.getElementById("video-id").value),
+                    title: document.getElementById("video-title").value || null,
+                    description: document.getElementById("video-description").value || null,
+                    upload_date: document.getElementById("video-upload-date").value || null,
+                    category: document.getElementById("video-category").value || null
+                };
+            }
+    
+            output.textContent = "Updating data...";
+            try {
+                const response = await fetch(`/update_data?database=${database}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = "Error: " + error.message;
+            }
+        }
+    </script>
+    <script>
+        document.getElementById("delete-table").addEventListener("change", () => {
+            const table = document.getElementById("delete-table").value;
+            const fieldsDiv = document.getElementById("delete-fields");
+            fieldsDiv.innerHTML = "";
+    
+            const database = document.getElementById("delete-database").value;
+    
+            if (database === "mongo") {
+                fieldsDiv.innerHTML = `<input type="text" id="mongo-id" placeholder="MongoDB _id (Required)" required />`;
+            } else {
+                if (table === "Users") {
+                    fieldsDiv.innerHTML = `<input type="number" id="user-id" placeholder="User ID (Required)" required />`;
+                } else if (table === "Videos") {
+                    fieldsDiv.innerHTML = `<input type="number" id="video-id" placeholder="Video ID (Required)" required />`;
+                }
+            }
+        });
+    
+        async function deleteFlexibleData() {
+            const database = document.getElementById("delete-database").value;
+            const table = document.getElementById("delete-table").value;
+            const output = document.getElementById("delete-output");
+    
+            let payload = { table };
+    
+            if (database === "mongo") {
+                payload.data = { _id: document.getElementById("mongo-id").value };
+            } else if (database === "postgres") {
+                if (table === "Users") {
+                    payload.data = { user_id: parseInt(document.getElementById("user-id").value) };
+                } else if (table === "Videos") {
+                    payload.data = { video_id: parseInt(document.getElementById("video-id").value) };
+                }
+            }
+    
+            output.textContent = "Deleting data...";
+            try {
+                const response = await fetch(`/delete_data?database=${database}`, {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = "Error: " + error.message;
+            }
+        }
+    </script>
+    
+    
+    
+    
+</body>
+</html>
