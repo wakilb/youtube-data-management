@@ -25,5 +25,9 @@ This project demonstrates a web-based system to manage `Users` and `Videos` usin
    http://127.0.0.1:5000/
 
 ## Video Demonstration
+```bash
+https://youtu.be/kuAiG5IoigE
 
 ## Source Code
+```bash
+https://github.com/wakilb/youtube-data-management
